@@ -6,8 +6,6 @@ add_subdirectory(blk_drv)
 add_subdirectory(chr_drv)
 add_subdirectory(math)
 
-set(INCLUDE_DIR "${SOURCE_ROOT_DIR}/include")
-
 add_library(kernel STATIC
         sched.c traps.c fork.c panic.c printk.c
         vsprintf.c sys.c exit.c signal.c

@@ -1,30 +1,15 @@
 cmake_minimum_required(VERSION 3.17)
 
 set(SOURCE_ROOT_DIR "${CMAKE_SOURCE_DIR}")
-set(BINARY_ROOT_DIR "${CMAKE_BINARY_DIR}")
+set(INCLUDE_DIR "${SOURCE_ROOT_DIR}/include")
 
 ################################
 ###### Default Executable ######
 ################################
 
-function(default_exec marco_name marco execname)
-    if ("${marco}" STREQUAL "")
-        find_program(${execname}_EXEC "${execname}" REQUIRED)
-        message("Found executable `${execname}` (${${execname}_EXEC}). Manual override marco `${marco_name}`.")
-        set(${marco_name} "${${execname}_EXEC}" PARENT_SCOPE)
-    else()
-        message("Executable `${execname}` overridden by `${marco}`.")
-    endif()
-endfunction()
+include(modules/default_proj.cmake)
 
-function(default_flags marco_name marco flag_name)
-    if ("${marco}" STREQUAL "")
-        set(${marco_name} "${flag_name}" PARENT_SCOPE)
-    endif()
-endfunction()
-
-
-default_exec(MKISOFS_EXEC   "${MKISOFS_EXEC}"   "mkisofs")
+#default_exec(MKISOFS_EXEC   "${MKISOFS_EXEC}"   "mkisofs")
 default_exec(DD_EXEC        "${DD_EXEC}"        "dd")
 default_exec(MKDIR_EXEC     "${MKDIR_EXEC}"     "mkdir")
 default_exec(TOUCH_EXEC     "${TOUCH_EXEC}"     "touch")
@@ -54,33 +39,17 @@ string(REPLACE " " ";" GAS_LDFLAGS  "${GAS_LDFLAGS}")
 string(REPLACE " " ";" GCCFLAGS     "${GCCFLAGS}")
 string(REPLACE " " ";" GCXXFLAGS    "${GCXXFLAGS}")
 
-
 ################################
 #########  Output Name #########
 ################################
-default_flags(KERNEL_NAME "${KERNEL_NAME}" "Sysdarft")
-default_flags(SYSTEM_IMG_NAME "${SYSTEM_IMG_NAME}" "Image")
-
-
-################################
-###### Verbose Output Ctl ######
-################################
-
-default_flags(VERBOSE "${VERBOSE}" "OFF")
-
-if (NOT ${VERBOSE})
-    set(CLEAN_CONSOLE "2>/dev/null" ">/dev/null")
-else()
-    set(CLEAN_CONSOLE "")
-endif()
-
+default_flags(KERNEL_NAME "${KERNEL_NAME}" "linux")
+default_flags(SYSTEM_IMG_NAME "${SYSTEM_IMG_NAME}" "floppy.image")
 
 ################################
 ###### Proj Configuration ######
 ################################
 
-project(${KERNEL_NAME} C)
-
+project(${KERNEL_NAME})
 
 ################################
 ####### Default Compilers ######
@@ -96,7 +65,6 @@ endif()
 
 set(CMAKE_C_STANDARD 11)
 
-
 ################################
 ###### Kernel Compilation ######
 ################################
@@ -108,64 +76,58 @@ add_subdirectory(lib)
 add_subdirectory(mm)
 add_subdirectory(init)
 
-set(ARCHIVES kernel/libkernel.a mm/libmm.a fs/libfs.a)
-set(DRIVERS  kernel/blk_drv/libblk_drv.a kernel/chr_drv/libchr_drv.a)
-set(MATH     kernel/math/libmath.a)
-set(LIBS     lib/liblib.a)
+set(TMP_KERNEL_NAME "${KERNEL_NAME}.kernel.elf32")
 
-set(TMP_KERNEL_NAME ".${KERNEL_NAME}.tmp")
-
-add_custom_target(${KERNEL_NAME} ALL
+add_custom_target(${TMP_KERNEL_NAME} ALL
         COMMAND "${GLD_EXEC}" ${GAS_LDFLAGS} -Ttext 0 -e startup_32
-                boot/head.o
-                init/CMakeFiles/init.dir/main.c.o
-                ${ARCHIVES} ${DRIVERS} ${MATH} ${LIBS}
+                boot/libhead.a init/libinit.a kernel/libkernel.a mm/libmm.a
+                fs/libfs.a kernel/blk_drv/libblk_drv.a kernel/chr_drv/libchr_drv.a
+                kernel/math/libmath.a lib/liblib.a
                 -o
                 "${TMP_KERNEL_NAME}"
+        DEPENDS head fs kernel mm init lib chr_drv blk_drv math
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+add_custom_target(System.map ALL
         COMMAND "${NM_EXEC}" "${TMP_KERNEL_NAME}"
-                |
-                ${GREP_EXEC} -v '\(compiled\)\|\(\.o$$\)\|\( [aU] \)\|\(\.\.ng$$\)\|\(LASH[RL]DI\)'
-                |
-                ${SORT_EXEC}
-                > System.map
+        | ${GREP_EXEC} -v '\(compiled\)\|\(\.o$$\)\|\( [aU] \)\|\(\.\.ng$$\)\|\(LASH[RL]DI\)'
+        | ${SORT_EXEC} > System.map
+        DEPENDS ${TMP_KERNEL_NAME}
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+add_custom_target(strip_bootsect ALL
+        COMMAND ${CMAKE_SOURCE_DIR}/script/strip_bootsect.sh boot/bootsect ${OBJCPY_EXEC} ${DD_EXEC} ${RM_EXEC}
+        DEPENDS bootsect
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+add_custom_target(strip_setup ALL
+        COMMAND ${CMAKE_SOURCE_DIR}/script/strip_setup.sh boot/setup ${OBJCPY_EXEC} ${DD_EXEC} ${RM_EXEC}
+        DEPENDS setup
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+add_custom_target(${KERNEL_NAME} ALL
         # strip
         COMMAND "${STRIP_EXEC}" "${TMP_KERNEL_NAME}"
         # generate kernel
-        COMMAND ${OBJCPY_EXEC} -O binary -R .note -R .comment "${TMP_KERNEL_NAME}" "${KERNEL_NAME}"
-        # remove temp files
-        COMMAND ${RM_EXEC} -rf "${TMP_KERNEL_NAME}"
-        DEPENDS ${BOOT_OBJECTS} fs kernel mm init lib chr_drv blk_drv math
-        BYPRODUCTS "${KERNEL_NAME}" System.map
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-        COMMENT "Build system kernel '${KERNEL_NAME}'")
+        COMMAND ${OBJCPY_EXEC} -O binary -R .note -R .comment "${TMP_KERNEL_NAME}" ${KERNEL_NAME}.raw
+        #                                                                      2880 - 1(bootsect) - 3(setup)
+        COMMAND ${DD_EXEC} if=${KERNEL_NAME}.raw of=${KERNEL_NAME} bs=512 count=2876
+        COMMAND ${RM_EXEC} ${KERNEL_NAME}.raw
+        DEPENDS ${TMP_KERNEL_NAME}
+        )
+## strip
+#COMMAND "${STRIP_EXEC}" "${TMP_KERNEL_NAME}"
+## generate kernel
+#COMMAND ${OBJCPY_EXEC} -O binary -R .note -R .comment "${TMP_KERNEL_NAME}" "${KERNEL_NAME}"
+## remove temp files
+#COMMAND ${RM_EXEC} -rf "${TMP_KERNEL_NAME}"
 
-add_custom_target(Image ALL
+add_custom_target(${SYSTEM_IMG_NAME} ALL
         # boot sector
-        COMMAND "${DD_EXEC}" if=boot/bootsect bs=512 count=1 of=${SYSTEM_IMG_NAME}              ${CLEAN_CONSOLE}
+        COMMAND "${DD_EXEC}" if=boot/bootsect bs=512 count=1 of=${SYSTEM_IMG_NAME}
         # setup
-        COMMAND "${DD_EXEC}" if=boot/setup seek=1 bs=512 count=4 of=${SYSTEM_IMG_NAME}          ${CLEAN_CONSOLE}
-        # System                                                   2883 == 2888 -1 -4
-        COMMAND "${DD_EXEC}" if=${KERNEL_NAME} seek=5 bs=512 count=2883 of=${SYSTEM_IMG_NAME}   ${CLEAN_CONSOLE}
-        DEPENDS ${KERNEL_NAME}
-        BYPRODUCTS ${SYSTEM_IMG_NAME}
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-        COMMENT "Build system image '${SYSTEM_IMG_NAME}'")
-
-
-################################
-###### QEMU Configuration ######
-################################
-
-default_exec(QEMU_EXEC "${QEMU_EXEC}" "qemu-system-i386")
-
-string(REPLACE " " ";" QEMU_HDD_OPTIONS   "${QEMU_HDD_OPTIONS}")
-string(REPLACE " " ";" QEMU_CDROM_OPTIONS "${QEMU_CDROM_OPTIONS}")
-
-add_custom_target(qemu_i386_emulation
-        COMMAND "${QEMU_EXEC}"  -m 16M -boot a -blockdev
-                                driver=file,node-name=fda,filename=${BINARY_ROOT_DIR}/${SYSTEM_IMG_NAME}
-                                -device floppy,drive=fda -drive format=raw,file=${HDC_DISK_IMG}
-                                -enable-kvm -m 128M ${QEMU_HDD_OPTIONS}
-        DEPENDS ${KERNEL_NAME}
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-        COMMENT "QEMU Boot from HDD")
+        COMMAND "${DD_EXEC}" if=boot/setup seek=1 bs=512 count=4 of=${SYSTEM_IMG_NAME}
+        # System                                                   2876 == 2880 -1 -4
+        COMMAND "${DD_EXEC}" if=${KERNEL_NAME} seek=5 bs=512 count=2876 of=${SYSTEM_IMG_NAME}
+        DEPENDS ${KERNEL_NAME} strip_bootsect strip_setup
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR})

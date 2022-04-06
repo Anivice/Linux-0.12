@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.17)
 
 project(fs C)
-set(INCLUDE_DIR "${SOURCE_ROOT_DIR}/include")
 
 add_library(fs STATIC
         bitmap.c block_dev.c buffer.c char_dev.c exec.c fcntl.c file_dev.c
