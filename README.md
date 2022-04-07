@@ -76,6 +76,10 @@ or
 make qemu_boot
 ```
 
+QEMU should behave like the following image
+
+![QEMU BOOT](pictures/qemu.png)
+
 ## Debug with QEMU
 
 Say we have built the system using ninja. We can enable remote
