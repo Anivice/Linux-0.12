@@ -78,6 +78,7 @@ add_subdirectory(init)
 
 set(TMP_KERNEL_NAME "${KERNEL_NAME}.kernel.elf32")
 
+# compile kernel with debug information
 add_custom_target(${TMP_KERNEL_NAME} ALL
         COMMAND "${GLD_EXEC}" ${GAS_LDFLAGS} -Ttext 0 -e startup_32
                 boot/libhead.a init/libinit.a kernel/libkernel.a mm/libmm.a
@@ -88,6 +89,7 @@ add_custom_target(${TMP_KERNEL_NAME} ALL
         DEPENDS head fs kernel mm init lib chr_drv blk_drv math
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
+# generate system symbol map
 add_custom_target(System.map ALL
         COMMAND "${NM_EXEC}" "${TMP_KERNEL_NAME}"
         | ${GREP_EXEC} -v '\(compiled\)\|\(\.o$$\)\|\( [aU] \)\|\(\.\.ng$$\)\|\(LASH[RL]DI\)'
@@ -95,16 +97,19 @@ add_custom_target(System.map ALL
         DEPENDS ${TMP_KERNEL_NAME}
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
+# strip boot sector
 add_custom_target(strip_bootsect ALL
         COMMAND ${CMAKE_SOURCE_DIR}/script/strip_bootsect.sh boot/bootsect ${OBJCPY_EXEC} ${DD_EXEC} ${RM_EXEC}
         DEPENDS bootsect
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
+# strip setup
 add_custom_target(strip_setup ALL
         COMMAND ${CMAKE_SOURCE_DIR}/script/strip_setup.sh boot/setup ${OBJCPY_EXEC} ${DD_EXEC} ${RM_EXEC}
         DEPENDS setup
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
+# generate pure binary kernel
 add_custom_target(${KERNEL_NAME} ALL
         # generate kernel
         COMMAND ${OBJCPY_EXEC} -O binary -R .note -R .comment "${TMP_KERNEL_NAME}" ${KERNEL_NAME}.raw
@@ -114,6 +119,7 @@ add_custom_target(${KERNEL_NAME} ALL
         DEPENDS ${TMP_KERNEL_NAME}
         )
 
+# generate floppy image
 add_custom_target(${FLOPPY_IMG_NAME} ALL
         # boot sector
         COMMAND "${DD_EXEC}" if=boot/bootsect bs=512 count=1 of=${FLOPPY_IMG_NAME}
@@ -124,6 +130,7 @@ add_custom_target(${FLOPPY_IMG_NAME} ALL
         DEPENDS ${KERNEL_NAME} strip_bootsect strip_setup
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
+# qemu debugging
 add_custom_target(qemu_debug
         # Make a copy of the root hdd
         COMMAND ${CP_EXEC} ../${HDC_DISK_IMG} ${HDC_DISK_IMG}
