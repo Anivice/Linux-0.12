@@ -9,7 +9,7 @@ set(INCLUDE_DIR "${SOURCE_ROOT_DIR}/include")
 
 include(modules/default_proj.cmake)
 
-#default_exec(MKISOFS_EXEC   "${MKISOFS_EXEC}"   "mkisofs")
+default_exec(QEMU_EXEC      "${QEMU_EXEC}"      "qemu-system-i386")
 default_exec(DD_EXEC        "${DD_EXEC}"        "dd")
 default_exec(MKDIR_EXEC     "${MKDIR_EXEC}"     "mkdir")
 default_exec(TOUCH_EXEC     "${TOUCH_EXEC}"     "touch")
@@ -25,12 +25,12 @@ default_exec(SORT_EXEC      "${SORT_EXEC}"      "sort")
 default_exec(RM_EXEC        "${RM_EXEC}"        "rm")
 
 default_flags(OUTPUT_ISO_NAME   "${OUTPUT_ISO_NAME}"    "bootcd.iso")
-default_flags(GAS_FLAGS         "${GAS_FLAGS}"          "--32")
-default_flags(GAS_LDFLAGS       "${GAS_LDFLAGS}"        "-m elf_i386")
+default_flags(GAS_FLAGS         "${GAS_FLAGS}"          "--32 -g")
+default_flags(GAS_LDFLAGS       "${GAS_LDFLAGS}"        "-m elf_i386 -g")
 default_flags(GCCFLAGS          "${GCCFLAGS}"           "-m32 -fno-builtin \
                                                          -fno-stack-protector \
                                                          -fomit-frame-pointer \
-                                                         -fstrength-reduce -Wall")
+                                                         -fstrength-reduce -Wall -g")
 default_flags(GCXXFLAGS         "${GCXXFLAGS}"          "-nostdinc")
 default_flags(HDC_DISK_IMG      "${HDC_DISK_IMG}"       "hdc-0.11.img")
 
@@ -43,7 +43,7 @@ string(REPLACE " " ";" GCXXFLAGS    "${GCXXFLAGS}")
 #########  Output Name #########
 ################################
 default_flags(KERNEL_NAME "${KERNEL_NAME}" "linux")
-default_flags(SYSTEM_IMG_NAME "${SYSTEM_IMG_NAME}" "floppy.image")
+default_flags(FLOPPY_IMG_NAME "${FLOPPY_IMG_NAME}" "floppy.image")
 
 ################################
 ###### Proj Configuration ######
@@ -106,8 +106,6 @@ add_custom_target(strip_setup ALL
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_custom_target(${KERNEL_NAME} ALL
-        # strip
-        COMMAND "${STRIP_EXEC}" "${TMP_KERNEL_NAME}"
         # generate kernel
         COMMAND ${OBJCPY_EXEC} -O binary -R .note -R .comment "${TMP_KERNEL_NAME}" ${KERNEL_NAME}.raw
         #                                                                      2880 - 1(bootsect) - 3(setup)
@@ -115,19 +113,24 @@ add_custom_target(${KERNEL_NAME} ALL
         COMMAND ${RM_EXEC} ${KERNEL_NAME}.raw
         DEPENDS ${TMP_KERNEL_NAME}
         )
-## strip
-#COMMAND "${STRIP_EXEC}" "${TMP_KERNEL_NAME}"
-## generate kernel
-#COMMAND ${OBJCPY_EXEC} -O binary -R .note -R .comment "${TMP_KERNEL_NAME}" "${KERNEL_NAME}"
-## remove temp files
-#COMMAND ${RM_EXEC} -rf "${TMP_KERNEL_NAME}"
 
-add_custom_target(${SYSTEM_IMG_NAME} ALL
+add_custom_target(${FLOPPY_IMG_NAME} ALL
         # boot sector
-        COMMAND "${DD_EXEC}" if=boot/bootsect bs=512 count=1 of=${SYSTEM_IMG_NAME}
+        COMMAND "${DD_EXEC}" if=boot/bootsect bs=512 count=1 of=${FLOPPY_IMG_NAME}
         # setup
-        COMMAND "${DD_EXEC}" if=boot/setup seek=1 bs=512 count=4 of=${SYSTEM_IMG_NAME}
+        COMMAND "${DD_EXEC}" if=boot/setup seek=1 bs=512 count=4 of=${FLOPPY_IMG_NAME}
         # System                                                   2876 == 2880 -1 -4
-        COMMAND "${DD_EXEC}" if=${KERNEL_NAME} seek=5 bs=512 count=2876 of=${SYSTEM_IMG_NAME}
+        COMMAND "${DD_EXEC}" if=${KERNEL_NAME} seek=5 bs=512 count=2876 of=${FLOPPY_IMG_NAME}
         DEPENDS ${KERNEL_NAME} strip_bootsect strip_setup
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+add_custom_target(qemu_debug
+        # Make a copy of the root hdd
+        COMMAND ${CP_EXEC} ../${HDC_DISK_IMG} ${HDC_DISK_IMG}
+        # boot qemu
+        COMMAND ${QEMU_EXEC} -boot a
+                -blockdev driver=file,node-name=fda,filename=${FLOPPY_IMG_NAME}
+                -device floppy,drive=fda -drive format=raw,file=${HDC_DISK_IMG}
+                -m 16M -S -gdb tcp:localhost:9000
+        DEPENDS ${FLOPPY_IMG_NAME}
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})

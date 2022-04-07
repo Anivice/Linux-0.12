@@ -21,4 +21,4 @@ target_link_options(setup PUBLIC -Ttext 0 -m elf_i386)
 # Compile head
 set_source_files_properties(head.s PROPERTIES LANGUAGE ASM_GAS)
 add_library(head STATIC head.s)
-target_compile_options(head PRIVATE "--32")
+target_compile_options(head PRIVATE --32 -g)

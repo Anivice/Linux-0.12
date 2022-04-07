@@ -9,7 +9,7 @@ add_subdirectory(math)
 add_library(kernel STATIC
         sched.c traps.c fork.c panic.c printk.c
         vsprintf.c sys.c exit.c signal.c
-        mktime.c sys_inf.c reboot.c
+        mktime.c reboot.c
         asm.s system_call.s)
 target_include_directories(kernel PUBLIC "${INCLUDE_DIR}")
 target_compile_options(kernel PUBLIC ${GCCFLAGS})
