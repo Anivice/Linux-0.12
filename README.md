@@ -62,8 +62,19 @@ cmake .. && make
 ![CMake Make](pictures/cmake.png)
 ![CMake Make After Compile](pictures/make_after_compile.png)
 
-This process will generate an ELF32 kernel file with debug info
-and a floppy disk image that can be used for booting the system
+This process will generate an ELF32 kernel file(```${KERNEL_NAME}.kernel.elf32```, 
+default is ```linux.kernel.elf32```) with debug info
+and a floppy disk image(```${FLOPPY_IMG_NAME}```, default is ```floppy.image```) 
+that can be used for booting the system under the ```${CMAKE_BINARY_DIR}```
+
+You can boot the system using the following command 
+```shell
+ninja qemu_boot
+```
+or
+```shell
+make qemu_boot
+```
 
 ## Debug with QEMU
 
