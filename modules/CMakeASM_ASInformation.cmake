@@ -1,9 +1,9 @@
-SET(ASM_DIALECT "_GAS")
+SET(ASM_DIALECT "_AS")
 
 SET(CMAKE_ASM${ASM_DIALECT}_SOURCE_FILE_EXTENSIONS s;asm)
 
 #Set any default arguments here
-SET(CMAKE_ASM_GAS_COMPILER_ARG1 "--32")
+SET(CMAKE_ASM_AS_COMPILER_ARG1 "--32")
 
 # This section exists to override the one in CMakeASMInformation.cmake
 # (the default Information file). This removes the <FLAGS>

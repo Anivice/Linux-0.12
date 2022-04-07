@@ -7,6 +7,6 @@
 # for each assembler on every architecture.
 ###
 
-set(ASM_DIALECT "_GAS")
+set(ASM_DIALECT "_AS")
 include(CMakeTestASMCompiler)
 set(ASM_DIALECT)
