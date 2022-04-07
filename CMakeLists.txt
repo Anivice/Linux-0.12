@@ -120,8 +120,8 @@ add_custom_target(${FLOPPY_IMG_NAME} ALL
         COMMAND "${DD_EXEC}" if=boot/bootsect bs=512 count=1 of=${FLOPPY_IMG_NAME}
         # setup
         COMMAND "${DD_EXEC}" if=boot/setup seek=1 bs=512 count=4 of=${FLOPPY_IMG_NAME}
-        # System                                                   2876 == 2880 -1 -4
-        COMMAND "${DD_EXEC}" if=${KERNEL_NAME} seek=5 bs=512 count=2876 of=${FLOPPY_IMG_NAME}
+        # System                                                   2875 == 2880 -1 -4
+        COMMAND "${DD_EXEC}" if=${KERNEL_NAME} seek=5 bs=512 count=2875 of=${FLOPPY_IMG_NAME}
         DEPENDS ${KERNEL_NAME} strip_bootsect strip_setup
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 

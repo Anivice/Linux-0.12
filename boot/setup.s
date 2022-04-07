@@ -368,7 +368,7 @@ head:
 sect:
 	.ascii "Secotrs:"
 
-.org 1536
+.org 2048
 .text
 endtext:
 .data
