@@ -64,7 +64,7 @@ cmake .. && make
 
 This process will generate an ELF32 kernel file(```${KERNEL_NAME}.kernel.elf32```, 
 default is ```linux.kernel.elf32```) with debug info
-and a floppy disk image(```${FLOPPY_IMG_NAME}```, default is ```floppy.image```) 
+and a floppy disk image(```${FLOPPY_IMG_NAME}```, default is ```floppy.img```) 
 that can be used for booting the system under the ```${CMAKE_BINARY_DIR}```
 
 You can boot the system using the following command 

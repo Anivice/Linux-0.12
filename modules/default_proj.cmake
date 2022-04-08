@@ -1,7 +1,7 @@
 function(default_exec marco_name marco execname)
     if ("${marco}" STREQUAL "")
         find_program(${execname}_EXEC "${execname}" REQUIRED)
-        message("Found executable `${execname}` (${${execname}_EXEC}). Manual override marco `${marco_name}`.")
+        message("Found executable `${execname}` (${${execname}_EXEC}). Manual override marco is `${marco_name}`.")
         set(${marco_name} "${${execname}_EXEC}" PARENT_SCOPE)
     else()
         message("Executable `${execname}` overridden by `${marco}`.")

@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.17)
 
 set(SOURCE_ROOT_DIR "${CMAKE_SOURCE_DIR}")
+set(BINARY_ROOT_DIR "${CMAKE_BINARY_DIR}")
 set(INCLUDE_DIR "${SOURCE_ROOT_DIR}/include")
 
 ################################
@@ -21,7 +22,7 @@ default_exec(GREP_EXEC      "${GREP_EXEC}"      "grep")
 default_exec(SORT_EXEC      "${SORT_EXEC}"      "sort")
 default_exec(RM_EXEC        "${RM_EXEC}"        "rm")
 
-default_flags(OUTPUT_ISO_NAME   "${OUTPUT_ISO_NAME}"    "bootcd.iso")
+default_flags(ADDITIONAL_QEMU_FLAG "${ADDITIONAL_QEMU_FLAG}"    "")
 default_flags(GAS_FLAGS         "${GAS_FLAGS}"          "--32 -g")
 default_flags(GAS_LDFLAGS       "${GAS_LDFLAGS}"        "-m elf_i386 -g")
 default_flags(GCCFLAGS          "${GCCFLAGS}"           "-m32 -fno-builtin \
@@ -30,6 +31,7 @@ default_flags(GCCFLAGS          "${GCCFLAGS}"           "-m32 -fno-builtin \
                                                          -fstrength-reduce -Wall -g")
 default_flags(HDC_DISK_IMG      "${HDC_DISK_IMG}"       "hdc-0.11.img")
 
+string(REPLACE " " ";" ADDITIONAL_QEMU_FLAG    "${ADDITIONAL_QEMU_FLAG}")
 string(REPLACE " " ";" GAS_FLAGS    "${GAS_FLAGS}")
 string(REPLACE " " ";" GAS_LDFLAGS  "${GAS_LDFLAGS}")
 string(REPLACE " " ";" GCCFLAGS     "${GCCFLAGS}")
@@ -38,7 +40,7 @@ string(REPLACE " " ";" GCCFLAGS     "${GCCFLAGS}")
 #########  Output Name #########
 ################################
 default_flags(KERNEL_NAME "${KERNEL_NAME}" "linux")
-default_flags(FLOPPY_IMG_NAME "${FLOPPY_IMG_NAME}" "floppy.image")
+default_flags(FLOPPY_IMG_NAME "${FLOPPY_IMG_NAME}" "floppy.img")
 
 ################################
 ###### Proj Configuration ######
@@ -142,9 +144,15 @@ add_custom_target(qemu_boot
         # Make a copy of the root hdd
         COMMAND ${CP_EXEC} ../${HDC_DISK_IMG} ${HDC_DISK_IMG}
         # boot qemu
-        COMMAND ${QEMU_EXEC} -boot a
+        COMMAND ${QEMU_EXEC} ${ADDITIONAL_QEMU_FLAG} -boot a
         -blockdev driver=file,node-name=fda,filename=${FLOPPY_IMG_NAME}
         -device floppy,drive=fda -drive format=raw,file=${HDC_DISK_IMG}
         -m 16M
         DEPENDS ${FLOPPY_IMG_NAME}
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+#############################################
+###### Preparation Knowledge for IA-32 ######
+#############################################
+
+add_subdirectory(Preparation)

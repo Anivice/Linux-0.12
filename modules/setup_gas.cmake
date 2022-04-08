@@ -1,4 +1,4 @@
-include(../modules/default_proj.cmake)
+include(${SOURCE_ROOT_DIR}/modules/default_proj.cmake)
 default_exec(GAS_EXEC "${GAS_EXEC}" "as")
 set(CMAKE_GAS_COMPILER "${GAS_EXEC}")
 set(CMAKE_GAS_COMPILER_ENV_VAR "")
