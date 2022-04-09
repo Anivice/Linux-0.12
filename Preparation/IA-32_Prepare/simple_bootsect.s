@@ -68,7 +68,7 @@
 
     # AT&T has instruction mnemonic suffix like -b(8bit) -w(16bit) -l(32bit)
 
-.equ BOOTSEG,   0x07c0              # original address of boot-sector
+.equ BOOTSEG,   0x07C0              # original address of boot-sector
 
     ljmp    $BOOTSEG,   $_start
 
@@ -112,18 +112,12 @@ _start:
     # show number
     movb    $' ',       %es:0x18
     movb    $0x07,      %es:0x19
-
-    # Highest, 5
-    movw    $number,    %ax
-    movb    $10,        %bh
-    div     %bh
-
-    addb    $'0',       %ah
-    movb    %ah,        %es:0x16
+    movb    $' ',       %es:0x16
     movb    $0x07,      %es:0x17
 
-    # No.4
-    xorb    %ah,        %ah
+    # Highest, 4
+    movw    $number,    %ax
+    movb    $10,        %bh
     div     %bh
 
     addb    $'0',       %ah
@@ -156,8 +150,8 @@ _start:
 
     jmp     .
 
-.org 379
-number: .word 0,0,0,0,0
+.org 374
+number:
 
 # for a boot sector to be valid, the last 2 byte should
 # be 0x55 and 0xAA (0xAA55)
