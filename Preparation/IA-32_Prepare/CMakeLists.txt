@@ -32,3 +32,4 @@ endfunction()
 
 add_single_file(simple_bootsect)
 add_single_file(advanced_bootsect)
+add_single_file("1+2+...+100")

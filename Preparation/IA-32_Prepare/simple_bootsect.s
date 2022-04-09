@@ -67,6 +67,16 @@
     # Intel syntax to dereference a memory location is “[ ]”. AT&T uses “( )”.
 
     # AT&T has instruction mnemonic suffix like -b(8bit) -w(16bit) -l(32bit)
+/*
+    b byte        1 bytes
+    w word        2 bytes
+    l long        4 bytes
+    q quad-word   8 bytes
+
+    s single      4 bytes
+    d double      8 bytes
+    t temporary  10 bytes
+*/
 
 .equ BOOTSEG,   0x07C0              # original address of boot-sector
 
