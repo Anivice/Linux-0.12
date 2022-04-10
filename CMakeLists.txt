@@ -98,20 +98,22 @@ add_custom_target(System.map ALL
 add_custom_target(strip_bootsect ALL
         COMMAND ${CMAKE_SOURCE_DIR}/script/strip_bootsect.sh boot/bootsect ${OBJCPY_EXEC} ${DD_EXEC} ${RM_EXEC}
         DEPENDS bootsect
+        BYPRODUCTS bootsect.bin
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
 # strip setup
 add_custom_target(strip_setup ALL
         COMMAND ${CMAKE_SOURCE_DIR}/script/strip_setup.sh boot/setup ${OBJCPY_EXEC} ${DD_EXEC} ${RM_EXEC}
         DEPENDS setup
+        BYPRODUCTS setup.bin
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
 # generate pure binary kernel
 add_custom_target(${KERNEL_NAME} ALL
         # generate kernel
         COMMAND ${OBJCPY_EXEC} -O binary -R .note -R .comment "${TMP_KERNEL_NAME}" ${KERNEL_NAME}.raw
-        #                                                                      2880 - 1(bootsect) - 3(setup)
-        COMMAND ${DD_EXEC} if=${KERNEL_NAME}.raw of=${KERNEL_NAME} bs=512 count=2876
+        #                                                                       2880 - 1(bootsect) - 3(setup)
+        COMMAND ${DD_EXEC} if=${KERNEL_NAME}.raw of=${KERNEL_NAME} bs=512 count=2876 2> /dev/null > /dev/null
         COMMAND ${RM_EXEC} ${KERNEL_NAME}.raw
         DEPENDS ${TMP_KERNEL_NAME}
         )
@@ -119,11 +121,11 @@ add_custom_target(${KERNEL_NAME} ALL
 # generate floppy image
 add_custom_target(${FLOPPY_IMG_NAME} ALL
         # boot sector
-        COMMAND "${DD_EXEC}" if=boot/bootsect bs=512 count=1 of=${FLOPPY_IMG_NAME}
+        COMMAND "${DD_EXEC}" if=boot/bootsect.bin bs=512 count=1 of=${FLOPPY_IMG_NAME} 2> /dev/null > /dev/null
         # setup
-        COMMAND "${DD_EXEC}" if=boot/setup seek=1 bs=512 count=4 of=${FLOPPY_IMG_NAME}
+        COMMAND "${DD_EXEC}" if=boot/setup.bin seek=1 bs=512 count=4 of=${FLOPPY_IMG_NAME} 2> /dev/null > /dev/null
         # System                                                   2875 == 2880 -1 -4
-        COMMAND "${DD_EXEC}" if=${KERNEL_NAME} seek=5 bs=512 count=2875 of=${FLOPPY_IMG_NAME}
+        COMMAND "${DD_EXEC}" if=${KERNEL_NAME} seek=5 bs=512 count=2875 of=${FLOPPY_IMG_NAME} 2> /dev/null > /dev/null
         DEPENDS ${KERNEL_NAME} strip_bootsect strip_setup
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
@@ -150,9 +152,3 @@ add_custom_target(qemu_boot
         -m 16M
         DEPENDS ${FLOPPY_IMG_NAME}
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
-
-#############################################
-###### Preparation Knowledge for IA-32 ######
-#############################################
-
-add_subdirectory(Preparation)
