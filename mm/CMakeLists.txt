@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.17)
-
 project(kernel C ASM)
 
 add_library(mm STATIC memory.c page.s)

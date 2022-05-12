@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.17)
-
 project(math C)
 
 add_library(math STATIC math_emulate.c)

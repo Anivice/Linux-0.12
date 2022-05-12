@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.17)
-
 project(chr_drv C ASM)
 
 set(LIB_NAME chr_drv)

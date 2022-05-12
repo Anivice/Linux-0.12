@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.17)
-
 project(lib C)
 
 set(LIB_NAME lib)

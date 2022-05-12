@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.16)
 
 set(SOURCE_ROOT_DIR "${CMAKE_SOURCE_DIR}")
 set(BINARY_ROOT_DIR "${CMAKE_BINARY_DIR}")
@@ -134,7 +134,7 @@ add_custom_target(qemu_debug
         # Make a copy of the root hdd
         COMMAND ${CP_EXEC} ../${HDC_DISK_IMG} ${HDC_DISK_IMG}
         # boot qemu
-        COMMAND ${QEMU_EXEC} -boot a
+        COMMAND ${QEMU_EXEC} ${ADDITIONAL_QEMU_FLAG} -boot a
                 -blockdev driver=file,node-name=fda,filename=${FLOPPY_IMG_NAME}
                 -device floppy,drive=fda -drive format=raw,file=${HDC_DISK_IMG}
                 -m 16M -S -gdb tcp:localhost:9000

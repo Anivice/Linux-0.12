@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.17)
-
 project(init C)
 
 add_library(init STATIC main.c)

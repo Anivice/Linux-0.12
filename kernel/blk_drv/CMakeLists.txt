@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.17)
-
 project(blk_drv C)
 
 set(LIB_NAME blk_drv)
