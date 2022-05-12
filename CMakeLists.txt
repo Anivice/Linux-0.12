@@ -137,7 +137,7 @@ add_custom_target(qemu_debug
         COMMAND ${QEMU_EXEC} ${ADDITIONAL_QEMU_FLAG} -boot a
                 -blockdev driver=file,node-name=fda,filename=${FLOPPY_IMG_NAME}
                 -device floppy,drive=fda -drive format=raw,file=${HDC_DISK_IMG}
-                -m 16M -S -gdb tcp:localhost:9000
+                -m 16M -S -gdb tcp:0.0.0.0:9000
         DEPENDS ${FLOPPY_IMG_NAME}
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
